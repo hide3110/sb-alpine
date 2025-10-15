@@ -1,6 +1,6 @@
-# sing-box
+# sing-box脚本
 
-这个 Bash 脚本可以帮助你在alpine系统快速部署 sing-box 代理服务器。
+这个 Bash 脚本可以帮助你在 alpine 系统快速部署 sing-box 代理服务器。
 
 ## 一、通过 wget 安装
 ### 一键脚本自定义
