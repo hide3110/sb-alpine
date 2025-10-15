@@ -1,7 +1,3 @@
-## 预览
-
-![preview](预览.png)
-
 # sing-box
 
 这个 Bash 脚本可以帮助你在alpine系统快速部署 sing-box 代理服务器。
