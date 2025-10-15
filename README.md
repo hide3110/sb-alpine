@@ -5,6 +5,8 @@
 # sing-box
 
 这个 Bash 脚本可以帮助你在alpine系统快速部署 sing-box 代理服务器。
+
+## 一、通过 wget 安装
 ## 一键脚本自定义
 自定义端口参数如：TR_PORT=8443 VL_PORT=9443 VL_SNI=www.microsoft.com (此为reality协议证书地址)，使用时请自行定义此参数！
 ```bash
