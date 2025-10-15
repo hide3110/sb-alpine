@@ -6,19 +6,30 @@
 
 这个 Bash 脚本可以帮助你在alpine系统快速部署 sing-box 代理服务器。
 ## 一键脚本自定义
-自定义端口参数如：SNELL_PORT=65432，密钥如：SNELL_PSK=TlfRkj6fSQhAGSM5ib79，使用时请自行定义此参数！
+自定义端口参数如：TR_PORT=8443 VL_PORT=9443 VL_SNI=www.microsoft.com(此为reality协议证书地址)，使用时请自行定义此参数！
 ```bash
-SNELL_PORT=65432 SNELL_PSK=TlfRkj6fSQhAGSM5ib79 bash <(curl -Ls https://raw.githubusercontent.com/hide3110/Snell/main/Snell.sh)
+TR_PORT=8443 VL_PORT=9443 VL_SNI=www.microsoft.com wget -O - https://raw.githubusercontent.com/hide3110/sb-alpine/main/install.sh | sh
 ```
+## 指定版本号
+可以脚本最后添加sing-box版本号，如1.11.4
 ```
-export SNELL_PORT=65432 SNELL_PSK=TlfRkj6fSQhAGSM5ib79 && wget -q https://raw.githubusercontent.com/hide3110/Snell/main/Snell.sh -O Snell.sh && chmod +x Snell.sh && ./Snell.sh
+TR_PORT=8443 VL_PORT=9443 VL_SNI=www.microsoft.com wget -O - https://raw.githubusercontent.com/hide3110/sb-alpine/main/install.sh | sh -s 1.11.4
+```
+
+## 二、通过 curl 安装
+## 一键脚本自定义
+```bash
+TR_PORT=8443 VL_PORT=9443 VL_SNI=www.microsoft.com curl -fsSL https://raw.githubusercontent.com/hide3110/sb-alpine/main/install.sh | sh
+```
+## 指定版本号
+```
+TR_PORT=8443 VL_PORT=9443 VL_SNI=www.microsoft.com curl -fsSL https://raw.githubusercontent.com/hide3110/sb-alpine/main/install.sh | sh -s 1.11.4
 ```
 
 
 ## 详细说明
 
-- 执行脚本即可自动部署 Snell 代理服务器。
-- 脚本会自动生成随机端口和预共享密钥（PSK），并配置在 Snell 服务器中。
-- 执行完脚本后，你会得到服务器的 IP 地址、端口号、PSK 等相关信息。
+- 脚本使用的自签 TLS 证书（用于 Trojan）
+- 此脚本仅安装了Trojan和reality两个协议
 
 
