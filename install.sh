@@ -176,8 +176,6 @@ chmod 644 /etc/ssl/private/bing.com.key
 chmod 644 /etc/ssl/private/bing.com.crt
 
 print_info "自签证书已生成:"
-print_info "  证书文件: /etc/ssl/private/bing.com.crt"
-print_info "  密钥文件: /etc/ssl/private/bing.com.key"
 
 # 步骤7：创建配置文件
 print_info "步骤 7/9: 创建 sing-box 配置文件"
