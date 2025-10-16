@@ -1,7 +1,6 @@
 #!/bin/sh
-
 # sing-box Alpine Linux 安装脚本
-# 用途：自动化安装 sing-box 到 Alpine Linux 系统
+# 使用方法: SB_VERSION=1.11.4 TR_PORT=8443 VL_PORT=8444 VL_SNI=www.google.com sh install.sh
 
 set -e  # 遇到错误立即退出
 
@@ -35,25 +34,31 @@ if [ ! -f /etc/alpine-release ]; then
     print_warning "检测到非 Alpine Linux 系统，脚本可能无法正常工作"
 fi
 
-# 配置变量（可通过环境变量覆盖）
+# 配置变量（支持环境变量和位置参数，优先使用环境变量）
+SB_VERSION=${SB_VERSION:-${1:-1.11.15}}
 TR_PORT=${TR_PORT:-65031}
 VL_PORT=${VL_PORT:-65032}
 VL_SNI=${VL_SNI:-www.cityofrc.us}
 
-# 步骤1：配置环境变量
-print_info "步骤 1/9: 配置环境变量"
+# 显示配置信息
+print_info "=========================================="
+print_info "sing-box Alpine Linux 安装脚本"
+print_info "=========================================="
+print_info "sing-box 版本: $SB_VERSION"
+print_info "Trojan 端口: $TR_PORT"
+print_info "VLESS 端口: $VL_PORT"
+print_info "VLESS SNI: $VL_SNI"
+print_info "=========================================="
 
-# 默认版本号，可通过参数修改
-SING_BOX_VERSION=${1:-1.11.15}
-
-# 检测系统架构
-ARCH=$(case "$(uname -m)" in 
-    'x86_64') echo 'amd64';; 
-    'x86' | 'i686' | 'i386') echo '386';; 
-    'aarch64' | 'arm64') echo 'arm64';; 
-    'armv7l') echo 'armv7';; 
-    's390x') echo 's390x';; 
-    *) echo 'unsupported';; 
+# 步骤1：检测系统架构
+print_info "步骤 1/9: 检测系统架构"
+ARCH=$(case "$(uname -m)" in
+    'x86_64') echo 'amd64';;
+    'x86' | 'i686' | 'i386') echo '386';;
+    'aarch64' | 'arm64') echo 'arm64';;
+    'armv7l') echo 'armv7';;
+    's390x') echo 's390x';;
+    *) echo 'unsupported';;
 esac)
 
 if [ "$ARCH" = "unsupported" ]; then
@@ -62,15 +67,10 @@ if [ "$ARCH" = "unsupported" ]; then
 fi
 
 print_info "检测到的服务器架构: $ARCH"
-print_info "sing-box 版本: $SING_BOX_VERSION"
-print_info "Trojan 端口: $TR_PORT"
-print_info "VLESS 端口: $VL_PORT"
-print_info "VLESS SNI: $VL_SNI"
 
 # 步骤2：下载文件
-print_info "步骤 2/9: 下载 sing-box"
-
-DOWNLOAD_URL="https://github.com/SagerNet/sing-box/releases/download/v$SING_BOX_VERSION/sing-box-$SING_BOX_VERSION-linux-$ARCH.tar.gz"
+print_info "步骤 2/9: 下载 sing-box $SB_VERSION"
+DOWNLOAD_URL="https://github.com/SagerNet/sing-box/releases/download/v$SB_VERSION/sing-box-$SB_VERSION-linux-$ARCH.tar.gz"
 print_info "下载地址: $DOWNLOAD_URL"
 
 if ! wget -q --show-progress "$DOWNLOAD_URL"; then
@@ -80,22 +80,27 @@ fi
 
 # 步骤3：解压并安装
 print_info "步骤 3/9: 解压并安装可执行文件"
-
-if ! tar -zxf "sing-box-$SING_BOX_VERSION-linux-$ARCH.tar.gz"; then
+if ! tar -zxf "sing-box-$SB_VERSION-linux-$ARCH.tar.gz"; then
     print_error "解压失败"
     exit 1
 fi
 
-mv "sing-box-$SING_BOX_VERSION-linux-$ARCH/sing-box" /usr/bin/
+mv "sing-box-$SB_VERSION-linux-$ARCH/sing-box" /usr/bin/
 chmod +x /usr/bin/sing-box
-
 print_info "sing-box 已安装到 /usr/bin/sing-box"
+
+# 验证安装
+if /usr/bin/sing-box version > /dev/null 2>&1; then
+    print_info "sing-box 安装验证通过"
+else
+    print_error "sing-box 安装验证失败"
+    exit 1
+fi
 
 # 步骤4：清理临时文件
 print_info "步骤 4/9: 清理临时文件"
-
-rm -rf "./sing-box-$SING_BOX_VERSION-linux-$ARCH"
-rm -f "./sing-box-$SING_BOX_VERSION-linux-$ARCH.tar.gz"
+rm -rf "./sing-box-$SB_VERSION-linux-$ARCH"
+rm -f "./sing-box-$SB_VERSION-linux-$ARCH.tar.gz"
 
 # 步骤5：创建配置目录和服务文件
 print_info "步骤 5/9: 创建配置目录和 OpenRC 服务文件"
@@ -117,37 +122,40 @@ extra_started_commands="reload checkconfig"
 : ${SINGBOX_CONFIG="/etc/sing-box"}
 
 if [ -d "$SINGBOX_CONFIG" ]; then
-	_config_opt="-C $SINGBOX_CONFIG"
+    _config_opt="-C $SINGBOX_CONFIG"
 elif [ -z "$SINGBOX_CONFIG" ]; then
-	_config_opt=""
+    _config_opt=""
 else
-	_config_opt="-c $SINGBOX_CONFIG"
+    _config_opt="-c $SINGBOX_CONFIG"
 fi
 
 command_args="run --disable-color
-	-D ${SINGBOX_WORKDIR:-"/var/lib/sing-box"}
-	$_config_opt"
+    -D ${SINGBOX_WORKDIR:-"/var/lib/sing-box"}
+    $_config_opt"
 
 depend() {
-	after net dns
+    after net dns
 }
 
 checkconfig() {
-	ebegin "Checking $RC_SVCNAME configuration"
-	sing-box check $_config_opt
-	eend $?
+    ebegin "Checking $RC_SVCNAME configuration"
+    sing-box check $_config_opt
+    eend $?
 }
 
 start_pre() {
-	checkconfig
+    checkconfig
 }
 
 reload() {
-	ebegin "Reloading $RC_SVCNAME"
-	checkconfig && $supervisor "$RC_SVCNAME" --signal HUP
-	eend $?
+    ebegin "Reloading $RC_SVCNAME"
+    checkconfig && $supervisor "$RC_SVCNAME" --signal HUP
+    eend $?
 }
 EOF
+
+chmod +x /etc/init.d/sing-box
+print_info "OpenRC 服务文件已创建"
 
 # 步骤6：生成自签证书
 print_info "步骤 6/9: 安装 OpenSSL 并生成自签证书"
@@ -155,7 +163,7 @@ print_info "步骤 6/9: 安装 OpenSSL 并生成自签证书"
 # 安装 openssl（如果未安装）
 if ! command -v openssl >/dev/null 2>&1; then
     print_info "正在安装 OpenSSL..."
-    apk add openssl
+    apk add --no-cache openssl
 else
     print_info "OpenSSL 已安装"
 fi
@@ -174,12 +182,10 @@ openssl req -x509 -nodes -newkey ec:<(openssl ecparam -name prime256v1) \
 # 设置证书文件权限
 chmod 644 /etc/ssl/private/bing.com.key
 chmod 644 /etc/ssl/private/bing.com.crt
-
-print_info "自签证书已生成:"
+print_info "自签证书已生成"
 
 # 步骤7：创建配置文件
 print_info "步骤 7/9: 创建 sing-box 配置文件"
-
 cat > /etc/sing-box/config.json << EOF
 {
   "log": {
@@ -246,7 +252,7 @@ print_info "配置文件已创建: /etc/sing-box/config.json"
 
 # 验证配置文件
 print_info "正在验证配置文件..."
-if sing-box check -c /etc/sing-box/config.json; then
+if sing-box check -c /etc/sing-box/config.json > /dev/null 2>&1; then
     print_info "配置文件验证通过"
 else
     print_error "配置文件验证失败，请检查配置"
@@ -255,10 +261,7 @@ fi
 
 # 步骤8：配置自启动
 print_info "步骤 8/9: 配置 OpenRC 自启动"
-
-chmod +x /etc/init.d/sing-box
-
-if rc-update add sing-box default; then
+if rc-update add sing-box default > /dev/null 2>&1; then
     print_info "已添加到开机自启动"
 else
     print_warning "添加自启动失败，请手动执行: rc-update add sing-box default"
@@ -266,39 +269,57 @@ fi
 
 # 步骤9：启动服务
 print_info "步骤 9/9: 启动 sing-box 服务"
-
-if rc-service sing-box start; then
+if rc-service sing-box start > /dev/null 2>&1; then
     print_info "sing-box 服务已成功启动"
     
     # 等待1秒后检查服务状态
     sleep 1
     
     if rc-service sing-box status > /dev/null 2>&1; then
-        print_info "服务运行状态: 正常运行"
+        SERVICE_STATUS="正常运行"
     else
+        SERVICE_STATUS="状态未知"
         print_warning "服务可能未正常运行，请检查日志"
     fi
 else
     print_error "服务启动失败，请检查配置和日志"
     print_info "可以使用以下命令查看日志:"
+    print_info "  rc-service sing-box status"
     print_info "  tail -f /var/log/messages"
     exit 1
 fi
 
 # 完成安装
+echo ""
 print_info "=========================================="
 print_info "sing-box 安装并启动完成！"
 print_info "=========================================="
-print_info "版本: $SING_BOX_VERSION"
-print_info "架构: $ARCH"
-print_info ""
+echo ""
+print_info "版本信息:"
+print_info "  sing-box 版本: $SB_VERSION"
+print_info "  系统架构: $ARCH"
+echo ""
+print_info "端口配置:"
+print_info "  Trojan (TLS): $TR_PORT"
+print_info "  VLESS-Reality: $VL_PORT"
+echo ""
+print_info "域名配置:"
+print_info "  Trojan SNI: www.bing.com"
+print_info "  Reality SNI: $VL_SNI"
+echo ""
 print_info "文件位置:"
 print_info "  配置文件: /etc/sing-box/config.json"
 print_info "  工作目录: /var/lib/sing-box"
 print_info "  证书文件: /etc/ssl/private/bing.com.crt"
 print_info "  密钥文件: /etc/ssl/private/bing.com.key"
-print_info ""
+echo ""
 print_info "服务状态:"
-print_info "  当前状态: 运行中"
+print_info "  当前状态: $SERVICE_STATUS"
 print_info "  开机自启: 已启用"
+echo ""
+print_info "常用命令:"
+print_info "  查看状态: rc-service sing-box status"
+print_info "  重启服务: rc-service sing-box restart"
+print_info "  停止服务: rc-service sing-box stop"
+print_info "  查看配置: sing-box check -c /etc/sing-box/config.json"
 print_info "=========================================="
