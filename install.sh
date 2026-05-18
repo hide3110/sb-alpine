@@ -35,7 +35,7 @@ if [ ! -f /etc/alpine-release ]; then
 fi
 
 # 配置变量（支持环境变量和位置参数，优先使用环境变量）
-SB_VERSION=${SB_VERSION:-${1:-1.11.15}}
+SB_VERSION=${SB_VERSION:-${1:-1.13.12}}
 TR_PORT=${TR_PORT:-65031}
 VL_PORT=${VL_PORT:-65032}
 VL_SNI=${VL_SNI:-www.cityofrc.us}
