@@ -21,5 +21,5 @@ sh <(wget -qO- https://raw.githubusercontent.com/hide3110/sb-alpine/main/uninsta
 ## 详细说明
 - 脚本使用的自签 TLS 证书（用于 Trojan）
 - 此脚本仅安装了Trojan和reality两个协议
-
+- 默认sing-box版本号为 1.13.12。
 
